@@ -1,122 +1,69 @@
-import React, { Component } from 'react';
+import React from 'react';
 import shortid from 'shortid';
 
 import styles from './PhoneBook.module.css'
 
-import PhoneList from '../PhoneList'
+import PhoneList from '../PhoneListItem'
 import FormAddContact from '../FormAddContact'
 import Filter from '../Filter'
 
-import {state} from './initialState'
+import { connect } from 'react-redux';
 
-class PhoneBook extends Component {
+ const  filterMurkup = (contacts,filter) => {
 
-    state = {
-        ...state
-    }
+    const normalozeFilter = filter.toLowerCase();
+    const filterContacts = contacts.filter(({ name,number }) => {
+        return name.toLowerCase().includes(normalozeFilter) || number.includes(normalozeFilter)
+    })
+    return filterContacts;
+}
 
-    componentDidMount() {
-        const contactList = JSON.parse(localStorage.getItem("contacts"));
-        this.setState({
-            contacts: contactList || [],
-        })
-    }
+const murkupList = (contacts, filter ) => {
 
-    componentDidUpdate(){
-        const {contacts} = this.state;
-        const contactList = JSON.stringify(contacts);
-        localStorage.setItem("contacts", contactList);
-    }
+    const list = contacts.length;
 
-    addContact = ({ name, number }) => {
-        const con = {
-            id: shortid.generate(),
-            name,
-            number,
-        }
-        
-        this.setState(prevState => {
-    
-            const result = prevState.contacts.find(item => (item.name.toLowerCase() === name.toLowerCase() || item.number === number));
+    return (
+      <>
+          {list > 3 ? <Filter /> : "" }
 
-            if (result) {
-                alert("Такой контакт уже есть!!!");
-                return {
-                    contacts: prevState.contacts,
-                }
-            } else {
-                return {
-                    contacts: [...prevState.contacts, con]
-                }
-            }
-        })
-    }
+          <table className={styles.tablePrice}>
+              <caption>Contacts</caption>
+              <thead>
+              <tr>
+                  <th>Name</th>
+                  <th>Number</th>
+                  <th>Action</th>
+              </tr>
+              </thead>
+              <tbody>
+              <PhoneList key={shortid.generate()} contacts={filterMurkup(contacts, filter)} />
+              </tbody>
+          </table>
+      </ >
+    )
+}
 
-    deletItem = (idx) => {
-        this.setState(({contacts})=>{
-            const newList = [...contacts];
-            newList.splice(idx, 1);
-            return {
-                contacts: newList,
-            }
-        });
-    }
+function PhoneBook({contacts,filter})  {
 
-    handleFilter = ({target}) => {
-        this.setState({ filter: target.value })
-    }
-
-    filterMurkup = () => {
-        const normalozeFilter = this.state.filter.toLowerCase();
-        const filterContacts = this.state.contacts.filter(({ name,number }) => {
-            return name.toLowerCase().includes(normalozeFilter) || number.includes(normalozeFilter)
-        })
-        return filterContacts;
-    }
-
-    render() {
-        const { state, addContact, deletItem, handleFilter,filterMurkup} = this;
-        const { filter,contacts} = state;
         const list = contacts.length;
-        
-        const murkupList = () => {
-            return (
-                <>
-                    {
-                        (list > 3) ?
-                            <Filter value={filter} onChange={handleFilter} />
-                            :
-                            ""
-                    }
-
-                    <table className={styles.tablePrice}>
-                        <caption>Contacts</caption>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Number</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <PhoneList key={shortid.generate()} contacts={filterMurkup()} onClick={deletItem}/>
-                        </tbody>
-                      </table>
-                </ >
-            )
-        }
 
         return (
             <>
                 <h1>Phonebook</h1>
 
-                <FormAddContact onSubmit={addContact} />
+                <FormAddContact />
 
-                {(list > 0) ? murkupList() : <p>Not found Contact!!!</p>}
+                {(list > 0) ? murkupList (contacts,filter): <p>Not found Contact!!!</p>}
                 
             </>
         )
     }
+
+const mapStateToProps = state => {
+    return {
+        contacts: state.contacts,
+        filter: state.filter
+    }
 }
 
-export default PhoneBook;
+export default connect(mapStateToProps)(PhoneBook)  ;
